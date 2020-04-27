@@ -1,0 +1,41 @@
+version: '3'
+services:
+  drone-server:
+    image: drone/drone
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DRONE_SERVER_HOST=${DRONE_SERVER_HOST}
+      - DRONE_SERVER_PROTO=https
+      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_DATABASE_DRIVER=postgres
+      - DRONE_DATABASE_DATASOURCE=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?sslmode=disable
+      - DRONE_USER_CREATE=${DRONE_USER_CREATE}
+      - VIRTUAL_HOST=${DRONE_SERVER_HOST}
+      - LETSENCRYPT_HOST=${DRONE_SERVER_HOST}
+  drone-agent:
+    image: drone/drone-runner-docker
+    restart: always
+    depends_on:
+      - drone-server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RPC_HOST=drone-server
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+networks: 
+  default:
+    external:
+      name: dockernginx_default

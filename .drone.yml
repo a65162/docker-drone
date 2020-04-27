@@ -1,0 +1,49 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: 使用 cloud.drone.io 部署 Drone 到私人伺服器
+    image: appleboy/drone-ssh
+    environment:
+      DRONE_SERVER_HOST:
+        from_secret: DRONE_SERVER_HOST
+      DRONE_GITHUB_CLIENT_ID: 
+        from_secret: DRONE_GITHUB_CLIENT_ID
+      DRONE_GITHUB_CLIENT_SECRET:
+        from_secret: DRONE_GITHUB_CLIENT_SECRET
+      DRONE_RPC_SECRET:
+        from_secret: DRONE_RPC_SECRET
+      POSTGRES_PASSWORD:
+        from_secret: POSTGRES_PASSWORD
+      DRONE_USER_CREATE:
+        from_secret: DRONE_USER_CREATE
+    settings:
+      host: 
+        from_secret: ssh_host
+      environment:
+        - DEBUG=true
+      username: 
+        from_secret: ssh_username
+      password: 
+        from_secret: ssh_password
+      port: 22
+      envs:
+        - DRONE_SERVER_HOST
+        - DRONE_GITHUB_CLIENT_ID
+        - DRONE_GITHUB_CLIENT_SECRET
+        - DRONE_RPC_SECRET
+        - POSTGRES_PASSWORD
+        - DRONE_USER_CREATE
+      script:
+        - rm -rf docker-drone
+        - git clone git@github.com:a65162/docker-drone.git
+        - cd docker-drone
+        - docker-compose down
+        - export DRONE_SERVER_HOST=$${DRONE_SERVER_HOST}
+        - export DRONE_GITHUB_CLIENT_ID=$${DRONE_GITHUB_CLIENT_ID}
+        - export DRONE_GITHUB_CLIENT_SECRET=$${DRONE_GITHUB_CLIENT_SECRET}
+        - export DRONE_RPC_SECRET=$${DRONE_RPC_SECRET}
+        - export POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
+        - export DRONE_USER_CREATE=$${DRONE_USER_CREATE}
+        - docker-compose up -d
